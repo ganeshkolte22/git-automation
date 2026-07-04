@@ -1,0 +1,25 @@
+name: Publish NGINX config to NIM
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "instance/**"
+
+jobs:
+  publish:
+    runs-on: self-hosted        # NIM is private (10.0.0.5)
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure jq + curl
+        run: command -v jq >/dev/null || sudo yum install -y jq curl
+      - name: Publish to instance
+        env:
+          CI_COMMIT_SHA: ${{ github.sha }}   # repo script requires this (GitLab builtin; absent on GitHub)
+        run: |
+          chmod +x prepare-payload.sh
+          ./prepare-payload.sh \
+            "${{ secrets.CTRL_IP }}" \
+            "${{ secrets.AUTH_TOKEN }}" \
+            "${{ secrets.SYSTEM_UID }}" \
+            "${{ secrets.NGINX_UID }}"
